@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RaiPlay Downloader 2.0 is a single-file Python CLI tool for downloading videos from RaiPlay (Italian public broadcaster RAI's streaming platform). It supports downloading individual episodes or entire seasons in batch using multiprocessing.
+RaiPlay Downloader (version in `main.__version__`) is a single-file Python CLI tool for downloading videos from RaiPlay (Italian public broadcaster RAI's streaming platform). It supports downloading individual episodes or entire seasons in batch using multiprocessing.
 
 ## Commands
 

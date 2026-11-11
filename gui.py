@@ -1,4 +1,4 @@
-"""RaiPlay Downloader 2.0 — customtkinter GUI."""
+"""RaiPlay Downloader — customtkinter GUI."""
 
 import sys
 import threading
@@ -11,7 +11,7 @@ import yt_dlp
 
 from main import (
     check_ffmpeg, validate_path, raiplay_url_to_json, build_yt_opts,
-    get_episodes_json, download_single_episode, session, REQUEST_TIMEOUT, MAX_WORKERS,
+    get_episodes_json, download_single_episode, session, REQUEST_TIMEOUT, MAX_WORKERS, __version__,
 )
 
 SINGLE, SEASON = "Single video", "Full season"
@@ -99,7 +99,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         ctk.set_appearance_mode("system")
-        self.title("RaiPlay Downloader 2.0")
+        self.title(f"RaiPlay Downloader {__version__}")
         self.geometry("720x880")
         self.minsize(600, 700)
         self.rows = []

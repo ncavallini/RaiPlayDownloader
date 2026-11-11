@@ -27,6 +27,7 @@ def create_session():
     return session
 
 
+__version__ = "1.0.0"
 REQUEST_TIMEOUT = 30
 MAX_WORKERS = 8
 
@@ -303,7 +304,7 @@ def main():
 
     choice = 0
     while choice not in [1, 2, 3]:
-        print("=== RaiPlay Downloader 2.0 ===")
+        print(f"=== RaiPlay Downloader {__version__} ===")
         print("Choose an option:\n")
         choice = read_int("""
         [1]: One video
