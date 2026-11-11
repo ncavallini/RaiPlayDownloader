@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+env:
+  DEPS: yt-dlp requests beautifulsoup4 tqdm customtkinter pyinstaller
+  PYI: pyinstaller --noconfirm --windowed --name RaiPlayDownloader --collect-data customtkinter gui.py
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install ${{ env.DEPS }}
+      - run: ${{ env.PYI }} --onefile
+      - run: mv dist/RaiPlayDownloader.exe RaiPlayDownloader-windows.exe
+      - uses: actions/upload-artifact@v4
+        with: { name: windows, path: RaiPlayDownloader-windows.exe }
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install ${{ env.DEPS }}
+      - run: ${{ env.PYI }}
+      - run: ditto -c -k --keepParent dist/RaiPlayDownloader.app RaiPlayDownloader-macos.zip
+      - uses: actions/upload-artifact@v4
+        with: { name: macos, path: RaiPlayDownloader-macos.zip }
+
+  linux:
+    # oldest available glibc, so the binary runs on the Flatpak runtime's newer one
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install ${{ env.DEPS }}
+      - run: ${{ env.PYI }}
+      - uses: actions/upload-artifact@v4
+        with: { name: linux-dist, path: dist }
+
+  flatpak:
+    needs: linux
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: linux-dist, path: dist }
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: RaiPlayDownloader.flatpak
+          manifest-path: io.github.ncavallini.RaiPlayDownloader.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+
+  upload:
+    needs: [windows, macos, flatpak]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true, pattern: "{windows,macos,RaiPlayDownloader.flatpak-*}" }
+      - run: gh release upload "${{ github.event.release.tag_name }}" out/* --clobber --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,33 @@
+# Repackages the PyInstaller Linux build (dist/RaiPlayDownloader, made by the release workflow) as a Flatpak.
+app-id: io.github.ncavallini.RaiPlayDownloader
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: raiplay-downloader
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=x11  # Tk has no Wayland backend
+  - --filesystem=home  # Tk's folder picker doesn't use portals
+modules:
+  - name: raiplay-downloader
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib /app/bin
+      - cp -r RaiPlayDownloader /app/lib/raiplay-downloader
+      # artifact download drops the executable bit
+      - chmod +x /app/lib/raiplay-downloader/RaiPlayDownloader
+      - ln -s /app/lib/raiplay-downloader/RaiPlayDownloader /app/bin/raiplay-downloader
+      - install -Dm644 io.github.ncavallini.RaiPlayDownloader.desktop -t /app/share/applications
+    sources:
+      - type: dir
+        path: dist
+      - type: inline
+        dest-filename: io.github.ncavallini.RaiPlayDownloader.desktop
+        contents: |
+          [Desktop Entry]
+          Type=Application
+          Name=RaiPlay Downloader
+          Exec=raiplay-downloader
+          Categories=AudioVideo;Network;
+          Terminal=false
