@@ -8,7 +8,8 @@ Get the latest build from the [Releases page](https://github.com/ncavallini/RaiP
 
 | Platform | File | Notes |
 |----------|------|-------|
-| Windows | `RaiPlayDownloader-windows.exe` | Just run it. SmartScreen may warn because the exe is unsigned: *More info → Run anyway*. |
+| Windows (installer) | `RaiPlayDownloader-windows-setup.exe` | Installs for your user (no admin needed) with a Start menu entry and uninstaller. SmartScreen may warn because it is unsigned: *More info → Run anyway*. |
+| Windows (portable) | `RaiPlayDownloader-windows.exe` | No install, just run it. Same SmartScreen note. |
 | macOS (Apple Silicon) | `RaiPlayDownloader-macos.zip` | Unzip, then right-click the app → *Open* the first time (the app is unsigned). |
 | Linux | `RaiPlayDownloader.flatpak` | `flatpak install --user RaiPlayDownloader.flatpak` (needs the `org.freedesktop.Platform//25.08` runtime from Flathub). |
 

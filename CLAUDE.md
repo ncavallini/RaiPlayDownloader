@@ -22,7 +22,7 @@ pip install "yt-dlp[default]" requests beautifulsoup4 tqdm customtkinter pyinsta
 python gui.py
 ```
 
-Releases: publishing a GitHub release runs `.github/workflows/release.yml`, which builds the GUI with PyInstaller for Windows (.exe), macOS (.app zip) and Linux, repackages the Linux build as a Flatpak (`io.github.ncavallini.RaiPlayDownloader.yml`), and attaches all three to the release.
+Releases: publishing a GitHub release runs `.github/workflows/release.yml`, which builds the GUI with PyInstaller for Windows (.exe plus an Inno Setup installer from `installer.iss`), macOS (.app zip) and Linux, repackages the Linux build as a Flatpak (`io.github.ncavallini.RaiPlayDownloader.yml`), and attaches all three to the release.
 
 There are no tests or linting configured.
 
