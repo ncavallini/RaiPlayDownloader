@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 env:
-  DEPS: yt-dlp requests beautifulsoup4 tqdm customtkinter pyinstaller
+  DEPS: yt-dlp[default] requests beautifulsoup4 tqdm customtkinter pyinstaller
   PYI: pyinstaller --noconfirm --windowed --name RaiPlayDownloader --collect-data customtkinter gui.py
 
 jobs:

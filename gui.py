@@ -1,5 +1,6 @@
 """RaiPlay Downloader — customtkinter GUI."""
 
+import queue
 import sys
 import threading
 from functools import partial
@@ -25,19 +26,13 @@ def clean_name(name):
 
 
 class TextRedirector:
-    """Redirects writes to a text widget (thread-safe)."""
+    """Redirects writes to the log box, via the app's main-thread queue (thread-safe)."""
 
-    def __init__(self, widget):
-        self.widget = widget
+    def __init__(self, app):
+        self.app = app
 
     def write(self, text):
-        self.widget.after(0, self._append, text)
-
-    def _append(self, text):
-        self.widget.configure(state="normal")
-        self.widget.insert("end", text)
-        self.widget.see("end")
-        self.widget.configure(state="disabled")
+        self.app.call_main(self.app._append_log, text)
 
     def flush(self):
         pass
@@ -49,6 +44,7 @@ class EpisodeRow(ctk.CTkFrame):
     def __init__(self, master, name):
         super().__init__(master, corner_radius=8, fg_color=("gray95", "gray20"))
         self.name = name
+        self.pending = None  # latest (fraction, text) from the worker, applied by flush()
         self.grid_columnconfigure(0, weight=1)
         title = name if len(name) <= 55 else name[:54] + "…"
         ctk.CTkLabel(self, text=title, anchor="w", font=ctk.CTkFont(weight="bold")).grid(
@@ -64,7 +60,13 @@ class EpisodeRow(ctk.CTkFrame):
             self.bar.set(fraction)
         self.info.configure(text=text)
 
+    def flush(self):
+        pending, self.pending = self.pending, None
+        if pending:
+            self.set_progress(*pending)
+
     def done(self, ok):
+        self.pending = None
         color = GREEN if ok else RED
         self.bar.configure(progress_color=color)
         self.bar.set(1)
@@ -72,11 +74,11 @@ class EpisodeRow(ctk.CTkFrame):
 
 
 class GuiProgressHook:
-    """yt-dlp progress hook that updates one EpisodeRow from a worker thread."""
+    """yt-dlp progress hook for one EpisodeRow. Runs in a worker thread, so it only stores
+    the latest state; the main thread draws it (see App._poll)."""
 
     def __init__(self, row):
         self.row = row
-        self.last_text = None
 
     def __call__(self, d):
         if d["status"] == "downloading":
@@ -84,15 +86,11 @@ class GuiProgressHook:
             downloaded = d.get("downloaded_bytes", 0)
             if total:
                 fraction = min(downloaded / total, 1)
-                text = f"{downloaded / 1_048_576:.0f} / {total / 1_048_576:.0f} MB · {fraction:.0%}"
+                self.row.pending = (fraction, f"{downloaded / 1_048_576:.0f} / {total / 1_048_576:.0f} MB · {fraction:.0%}")
             else:
-                fraction, text = None, f"{downloaded / 1_048_576:.0f} MB"
-            # yt-dlp calls this many times per second per worker; only redraw on visible change
-            if text != self.last_text:
-                self.last_text = text
-                self.row.after(0, self.row.set_progress, fraction, text)
+                self.row.pending = (None, f"{downloaded / 1_048_576:.0f} MB")
         elif d["status"] == "finished":
-            self.row.after(0, self.row.set_progress, 1, "Finalising…")
+            self.row.pending = (1, "Finalising…")
 
 
 class App(ctk.CTk):
@@ -103,11 +101,31 @@ class App(ctk.CTk):
         self.geometry("720x880")
         self.minsize(600, 700)
         self.rows = []
+        self.ui_queue = queue.SimpleQueue()
 
         self._build_ui()
         # Permanent redirect: a windowed build has no console, so yt-dlp/print output goes to the log
-        sys.stdout = sys.stderr = TextRedirector(self.log_text)
+        sys.stdout = sys.stderr = TextRedirector(self)
         self._check_ffmpeg()
+        self._poll()
+
+    # ── Threading ────────────────────────────────────────────────
+
+    def call_main(self, fn, *args):
+        """Run fn on the Tk thread. Workers must use this, never after()/widgets directly:
+        with 8 workers, cross-thread Tk calls froze the window for 10+ seconds."""
+        self.ui_queue.put((fn, args))
+
+    def _poll(self):
+        while True:
+            try:
+                fn, args = self.ui_queue.get_nowait()
+            except queue.Empty:
+                break
+            fn(*args)
+        for row in self.rows:
+            row.flush()
+        self.after(100, self._poll)
 
     # ── UI construction ──────────────────────────────────────────
 
@@ -195,8 +213,14 @@ class App(ctk.CTk):
             self.path_entry.delete(0, "end")
             self.path_entry.insert(0, folder)
 
+    def _append_log(self, text):
+        self.log_text.configure(state="normal")
+        self.log_text.insert("end", text)
+        self.log_text.see("end")
+        self.log_text.configure(state="disabled")
+
     def _set_status(self, msg):
-        self.after(0, self.status_var.set, msg)
+        self.call_main(self.status_var.set, msg)
 
     def _set_overall(self, done, total):
         self.progressbar.set(done / total)
@@ -218,7 +242,7 @@ class App(ctk.CTk):
             else:
                 self.status_var.set("Finished with errors")
                 messagebox.showwarning("Download finished with errors", summary)
-        self.after(0, _on_main)
+        self.call_main(_on_main)
 
     # ── Download logic ───────────────────────────────────────────
 
@@ -257,7 +281,7 @@ class App(ctk.CTk):
         except Exception as exc:
             self._finish(False, str(exc))
             return
-        self.after(0, self._start_jobs, jobs)
+        self.call_main(self._start_jobs, jobs)
 
     def _single_jobs(self, url, path):
         if not validate_path(path):
@@ -331,8 +355,8 @@ class App(ctk.CTk):
                 ok = result.startswith("[OK]")
                 if not ok:
                     failed.append(row.name)
-                self.after(0, row.done, ok)
-                self.after(0, self._set_overall, done, len(jobs))
+                self.call_main(row.done, ok)
+                self.call_main(self._set_overall, done, len(jobs))
 
         summary = f"{len(jobs) - len(failed)}/{len(jobs)} downloaded, {len(failed)} failed."
         if failed:

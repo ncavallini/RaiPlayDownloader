@@ -16,7 +16,7 @@ python main.py
 pyinstaller main.spec
 
 # Install dependencies (no requirements.txt exists; install manually)
-pip install yt-dlp requests beautifulsoup4 tqdm customtkinter pyinstaller
+pip install "yt-dlp[default]" requests beautifulsoup4 tqdm customtkinter pyinstaller
 
 # Run the GUI (customtkinter; downloads up to 8 episodes in parallel via ThreadPool)
 python gui.py

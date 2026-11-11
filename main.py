@@ -27,7 +27,7 @@ def create_session():
     return session
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 REQUEST_TIMEOUT = 30
 MAX_WORKERS = 8
 
@@ -133,6 +133,8 @@ def build_yt_opts(output_path, name, progress_hook=None, quiet=False):
         'writeautomaticsub': False,
         'continuedl': True,
         'quiet': quiet,
+        # our own bars (tqdm / GUI rows) show progress; yt-dlp's lines flooded the GUI log and froze it
+        'noprogress': True,
     }
     if has_ffmpeg:
         opts['merge_output_format'] = 'mp4'

@@ -28,7 +28,7 @@ Some RaiPlay content is only available from Italy.
 Requires Python 3.11+.
 
 ```bash
-pip install yt-dlp requests beautifulsoup4 tqdm customtkinter
+pip install "yt-dlp[default]" requests beautifulsoup4 tqdm customtkinter
 python gui.py    # graphical app
 python main.py   # interactive command-line version
 ```
