@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with: { path: out, merge-multiple: true, pattern: "{windows,macos,RaiPlayDownloader.flatpak-*}" }
+        with: { path: out, merge-multiple: true, pattern: "{windows,macos,*.flatpak}" }
       - run: gh release upload "${{ github.event.release.tag_name }}" out/* --clobber --repo "${{ github.repository }}"
         env:
           GH_TOKEN: ${{ github.token }}
