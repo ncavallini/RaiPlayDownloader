@@ -27,9 +27,12 @@ def create_session():
     return session
 
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 REQUEST_TIMEOUT = 30
-MAX_WORKERS = 8
+# episodes downloaded at once; each also fetches FRAGMENT_WORKERS HLS segments in parallel.
+# The bottleneck is bandwidth, not CPU: more episodes just split it and thrash the disk.
+MAX_WORKERS = 2
+FRAGMENT_WORKERS = 4
 
 session = create_session()
 
@@ -132,6 +135,7 @@ def build_yt_opts(output_path, name, progress_hook=None, quiet=False):
         'writesubtitles': False,
         'writeautomaticsub': False,
         'continuedl': True,
+        'concurrent_fragment_downloads': FRAGMENT_WORKERS,
         'quiet': quiet,
         # our own bars (tqdm / GUI rows) show progress; yt-dlp's lines flooded the GUI log and froze it
         'noprogress': True,

@@ -18,7 +18,7 @@ pyinstaller main.spec
 # Install dependencies (no requirements.txt exists; install manually)
 pip install "yt-dlp[default]" requests beautifulsoup4 tqdm customtkinter pyinstaller
 
-# Run the GUI (customtkinter; downloads up to 8 episodes in parallel via ThreadPool)
+# Run the GUI (customtkinter; downloads 2 episodes in parallel via ThreadPool, 4 HLS fragments each)
 python gui.py
 ```
 
@@ -32,7 +32,7 @@ The entire application lives in `main.py`. Key components:
 
 - **`get_episodes_json(url)`** — Scrapes a RaiPlay series page for a `<rai-episodes>` custom element, constructs a JSON API URL from its attributes (`base_path`, `block`, `set`, `episode_path`), and returns the season/episode metadata.
 - **`single_request(url, path)`** — Downloads one episode. Converts the `.html` URL to `.json` to fetch metadata, cleans the filename, and uses yt-dlp with format `best[height<=720]/best`.
-- **`batch_request(title_url, season_number, path, first_episode)`** — Downloads all episodes of a season using `multiprocessing.Pool` (max 4 workers). Uses `imap` for streaming results with a tqdm overall progress bar.
+- **`batch_request(title_url, season_number, path, first_episode)`** — Downloads all episodes of a season using `multiprocessing.Pool` (`MAX_WORKERS` episodes, each with `FRAGMENT_WORKERS` concurrent HLS fragments). Uses `imap` for streaming results with a tqdm overall progress bar.
 - **`download_single_episode(args)`** — Worker function unpacked by the pool; wraps a single yt-dlp download with progress tracking.
 - **`ProgressHook`** — Callable class that bridges yt-dlp's progress callback to tqdm progress bars.
 - **`main()`** — Interactive CLI menu with three modes: single video, batch season, or test download (which also lists available formats).

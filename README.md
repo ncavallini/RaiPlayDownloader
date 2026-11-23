@@ -1,6 +1,6 @@
 # RaiPlay Downloader
 
-Download single episodes or whole seasons from [RaiPlay](https://www.raiplay.it), in the best available quality, up to 8 episodes at a time.
+Download single episodes or whole seasons from [RaiPlay](https://www.raiplay.it), in the best available quality, 2 episodes at a time.
 
 ## Download
 
